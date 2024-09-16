@@ -27,7 +27,7 @@ export function handleRoutes(app: Express) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken({ userId: userInfo.id, email });
+    const token = generateToken({ userId: userInfo.id, sub: email });
 
     res.json({ token });
   });
