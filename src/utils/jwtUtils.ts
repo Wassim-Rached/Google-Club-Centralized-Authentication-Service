@@ -1,11 +1,8 @@
 import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
-import * as dotenv from "dotenv";
+import config from "../config";
 
-dotenv.config();
-
-// Load RSA keys from environment variables, replacing the escaped \n characters with actual newlines
-const privateKey = process.env.PRIVATE_KEY?.replace(/\\n/g, "\n") || "";
-const publicKey = process.env.PUBLIC_KEY?.replace(/\\n/g, "\n") || "";
+const privateKey = config.jwt.privateKey;
+const publicKey = config.jwt.publicKey;
 
 export function generateToken(payload: object): string {
   const options: SignOptions = {

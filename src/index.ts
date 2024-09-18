@@ -1,5 +1,4 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import { handleRoutes } from "./routers";
@@ -7,9 +6,6 @@ import config from "./config";
 import { corsOptions } from "./cors";
 import { errorHandlingMiddleware, timeoutMiddleware } from "./middlewares";
 import { setupGracefulShutdown } from "./gracefulShutdown";
-
-// Load environment variables
-dotenv.config();
 
 // Create Express app
 const app = express();

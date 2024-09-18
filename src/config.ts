@@ -1,3 +1,8 @@
+import { reformatPemKey } from "./utils/keys";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 export default {
   db: {
     user: process.env.DB_USER || "postgres",
@@ -7,8 +12,12 @@ export default {
     port: process.env.DB_PORT || 5432,
   },
   jwt: {
-    privateKey: process.env.PRIVATE_KEY?.replace(/\\n/g, "\n") || "",
-    publicKey: process.env.PUBLIC_KEY?.replace(/\\n/g, "\n") || "",
+    privateKey: process.env.PRIVATE_KEY
+      ? reformatPemKey(process.env.PRIVATE_KEY, false)
+      : "",
+    publicKey: process.env.PUBLIC_KEY
+      ? reformatPemKey(process.env.PUBLIC_KEY || "", true)
+      : "",
     expiration: process.env.JWT_EXPIRATION || "1h",
   },
   server: {
