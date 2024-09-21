@@ -39,4 +39,7 @@ export default {
   timeout: {
     requestTimeout: parseInt(process.env.REQUEST_TIMEOUT || "10000", 10), // Default 10s
   },
+  cache: {
+    ttl: parseInt(process.env.ttl || "600"),
+  },
 };
