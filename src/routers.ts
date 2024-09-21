@@ -99,6 +99,7 @@ export function handleRoutes(app: Express) {
       );
       if (!currentAccountAuthorities.includes("cas.perm.clear_account_cache")) {
         res.status(403).json({ message: "Insuffisent Permissions" });
+        return;
       }
 
       const { accountId } = req.params;
