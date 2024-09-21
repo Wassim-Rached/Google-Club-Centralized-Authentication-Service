@@ -1,7 +1,7 @@
 import { generateToken, verifyToken } from "./utils/jwtUtils";
 import {
-  getUserAuthoritiesById,
-  getUserInfoByEmail,
+  getAccountInfoByEmail,
+  getAccountAuthoritiesById,
 } from "./helpers/dbQueries";
 import bcrypt from "bcrypt";
 import { Express, Request, Response } from "express";
@@ -20,7 +20,7 @@ export function handleRoutes(app: Express) {
         .json({ message: "Email and password are required" });
     }
 
-    const userInfo = await getUserInfoByEmail(email);
+    const userInfo = await getAccountInfoByEmail(email);
 
     if (!userInfo) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -64,7 +64,9 @@ export function handleRoutes(app: Express) {
       const userId: string = decoded.sub as string;
 
       // Fetch user authorities
-      const authorities = await getUserAuthoritiesById(userId);
+      // get from request params
+      const scope = req.query.scope as string;
+      const authorities = await getAccountAuthoritiesById(userId, scope);
 
       res.json({ authorities });
     } catch (error) {
