@@ -18,9 +18,9 @@ export function handleRoutes(app: Express) {
     res.send("Central Authentication Service is up and running");
   });
 
-  app.get('/api/health', (req: Request, res: Response) => {
-    res.json({ status: 'UP' });
-  })
+  app.get("/api/health", (req: Request, res: Response) => {
+    res.json({ status: "UP" });
+  });
 
   app.post("/api/token", async (req: Request, res: Response) => {
     const { email, password } = req.body;

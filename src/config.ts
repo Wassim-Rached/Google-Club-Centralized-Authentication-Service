@@ -28,6 +28,7 @@ export default {
     allowedMethods: process.env.CORS_ALLOWED_METHODS?.split(",") || [
       "GET",
       "POST",
+      "OPTIONS",
     ],
     allowedHeaders: process.env.CORS_ALLOWED_HEADERS?.split(",") || [
       "Authorization",
