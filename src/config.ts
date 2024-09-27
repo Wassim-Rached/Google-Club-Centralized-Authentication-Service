@@ -24,7 +24,7 @@ export default {
     port: process.env.PORT || 3000,
   },
   cors: {
-    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(",") || [],
+    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(",") || true,
     allowedMethods: process.env.CORS_ALLOWED_METHODS?.split(",") || [
       "GET",
       "POST",
