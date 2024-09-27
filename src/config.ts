@@ -28,11 +28,14 @@ export default {
     allowedMethods: process.env.CORS_ALLOWED_METHODS?.split(",") || [
       "GET",
       "POST",
+      "PUT",
+      "DELETE",
       "OPTIONS",
     ],
     allowedHeaders: process.env.CORS_ALLOWED_HEADERS?.split(",") || [
       "Authorization",
       "Content-Type",
+      "Accept",
     ],
     allowCredentials: process.env.CORS_ALLOW_CREDENTIALS === "true" || false,
     maxAge: parseInt(process.env.CORS_MAX_AGE || "86400", 10), // Default 24 hours
