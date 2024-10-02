@@ -22,9 +22,10 @@ export default {
   },
   server: {
     port: process.env.PORT || 3000,
+    depServers: process.env.DEP_SERVERS?.split(";") || [],
   },
   cors: {
-    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(",") || true,
+    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(",") || "*",
     allowedMethods: process.env.CORS_ALLOWED_METHODS?.split(",") || [
       "GET",
       "POST",
@@ -41,7 +42,7 @@ export default {
     maxAge: parseInt(process.env.CORS_MAX_AGE || "86400", 10), // Default 24 hours
   },
   timeout: {
-    requestTimeout: parseInt(process.env.REQUEST_TIMEOUT || "10000", 10), // Default 10s
+    requestTimeout: parseInt(process.env.REQUEST_TIMEOUT || "60000", 10), // Default 10s
   },
   cache: {
     ttl: parseInt(process.env.ttl || "600"),

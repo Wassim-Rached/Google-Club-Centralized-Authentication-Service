@@ -12,14 +12,54 @@ import {
   setAuthoritiesCacheForAccount,
 } from "./utils/authoritiesCache";
 import { requireJwt } from "./middlewares";
+import { HealthCheckResponse } from "./types";
+import configuration from "./config";
 
 export function handleRoutes(app: Express) {
   app.get("/", (req: Request, res: Response) => {
     res.send("Central Authentication Service is up and running");
   });
 
-  app.get("/api/health", (req: Request, res: Response) => {
-    res.json({ status: "UP" });
+  app.get("/api/health", async (req: Request, res: Response) => {
+    // check if dep servers are all healthy
+    const depServers = configuration.server.depServers;
+
+    const result: HealthCheckResponse = {
+      status: "healthy",
+      dependencies: {},
+    };
+
+    for (const depServer of depServers) {
+      try {
+        const response = await fetch(`${depServer}/api/health`);
+        const data = await response.json();
+
+        if (response.status === 200) {
+          result.dependencies[depServer] = {
+            status: "healthy",
+            code: response.status,
+          };
+        } else {
+          result.status = "unhealthy";
+          result.dependencies[depServer] = {
+            status: "unhealthy",
+            code: response.status,
+            body: data,
+          };
+        }
+      } catch (error: any) {
+        result.status = "unhealthy";
+        result.dependencies[depServer] = {
+          status: "unhealthy",
+          code: 500,
+          error: error.message,
+        };
+      }
+    }
+
+    const statusCode = result.status === "healthy" ? 200 : 500;
+
+    return res.status(statusCode).json(result);
   });
 
   app.post("/api/token", async (req: Request, res: Response) => {
