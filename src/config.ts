@@ -21,6 +21,7 @@ export default {
     expiration: process.env.JWT_EXPIRATION || "1h",
   },
   server: {
+    globalAuthoritiesScope: process.env.GLOBAL_AUTHORITIES_SCOPE || "global",
     port: process.env.PORT || 3000,
     depServers: process.env.DEP_SERVERS?.split(";") || [],
   },

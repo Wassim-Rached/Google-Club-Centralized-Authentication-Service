@@ -9,11 +9,12 @@ import {
   clearAllAuthoritiesCache,
   clearAuthoritiesCacheForAccount,
   getAuthoritiesCacheForAccount,
-  setAuthoritiesCacheForAccount,
+  appendAuthoritiesCacheForAccount,
 } from "./utils/authoritiesCache";
 import { requireJwt } from "./middlewares";
 import { HealthCheckResponse } from "./types";
 import configuration from "./config";
+import { AUTHORITIES } from "./authorities";
 
 export function handleRoutes(app: Express) {
   app.get("/", (req: Request, res: Response) => {
@@ -118,10 +119,10 @@ export function handleRoutes(app: Express) {
       // get from request params
       const scope = req.query.scope as string;
 
-      let authorities = getAuthoritiesCacheForAccount(accountId);
+      let authorities = getAuthoritiesCacheForAccount(accountId, scope);
       if (!authorities) {
         authorities = await getAccountAuthoritiesById(accountId, scope);
-        setAuthoritiesCacheForAccount(accountId, authorities);
+        appendAuthoritiesCacheForAccount(accountId, authorities);
       }
 
       res.json({ authorities });
@@ -141,7 +142,9 @@ export function handleRoutes(app: Express) {
         currentAccountId,
         "cas"
       );
-      if (!currentAccountAuthorities.includes("cas.perm.clear_account_cache")) {
+      if (
+        !currentAccountAuthorities.includes(AUTHORITIES["clear_account_cache"])
+      ) {
         res.status(403).json({ message: "Insuffisent Permissions" });
         return;
       }
@@ -164,7 +167,9 @@ export function handleRoutes(app: Express) {
         "cas"
       );
       if (
-        !currentAccountAuthorities.includes("cas.perm.clear_all_accounts_cache")
+        !currentAccountAuthorities.includes(
+          AUTHORITIES["clear_all_accounts_cache"]
+        )
       ) {
         res.status(403).json({ message: "Insuffisent Permissions" });
         return;
