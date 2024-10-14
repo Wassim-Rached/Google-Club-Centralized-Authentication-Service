@@ -8,6 +8,12 @@ export interface AccountAuthoritiesCache {
   [scope: string]: string[] | undefined;
 }
 
+export function getAllAuthoritiesCacheForAccount(
+  accountId: string
+): AccountAuthoritiesCache | undefined {
+  return authoritiesCache.get<AccountAuthoritiesCache>(accountId);
+}
+
 // used to get all of the saved authorities cache keys
 export function getAllAccountsAuthoritiesCache() {
   return authoritiesCache.keys();

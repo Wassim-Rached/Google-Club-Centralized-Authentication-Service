@@ -5,6 +5,7 @@ import { Express, Request, Response } from "express";
 import {
   clearAllAccountsAuthoritiesCache,
   clearAuthoritiesCacheForAccount,
+  getAllAuthoritiesCacheForAccount,
   getAllAuthoritiesCacheKeys,
 } from "./utils/authoritiesCache";
 import {
@@ -15,7 +16,7 @@ import {
 } from "./middlewares";
 import { HealthCheckResponse } from "./types";
 import configuration from "./config";
-import { AUTHORITIES } from "./authorities";
+import { AUTHORITIES, getAccountAuthorities } from "./authorities";
 
 export function handleRoutes(app: Express) {
   app.get("/", (req: Request, res: Response) => {
@@ -64,6 +65,7 @@ export function handleRoutes(app: Express) {
     return res.status(statusCode).json(result);
   });
 
+  // Login route
   app.post("/api/token", async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
@@ -88,29 +90,28 @@ export function handleRoutes(app: Express) {
     res.json({ token });
   });
 
-  app.get("/api/token/verify", (req: Request, res: Response) => {
-    const token = req.headers.authorization?.split(" ")[1]; // Bearer token
-
-    if (!token) {
-      return res.status(401).json({ message: "Token is missing" });
+  app.get(
+    "/api/token/verify",
+    extractJwt,
+    requireJwt,
+    (req: Request, res: Response) => {
+      res.json({ message: "Token is valid" });
     }
+  );
 
-    try {
-      const decoded = verifyToken(token);
-
-      res.json({ message: "Access granted", data: decoded });
-    } catch (err) {
-      res.status(401).json({ message: "Invalid token" });
-    }
-  });
-
+  // extract my authorities
   app.get(
     "/api/token/authorities",
     extractJwt,
     requireJwt,
-    extractAuthorities(false),
     async (req: Request, res: Response) => {
-      res.json({ authorities: res.locals.authorities });
+      const { accountId } = res.locals;
+
+      const scope = req.query.scope as string;
+
+      const authorities = await getAccountAuthorities(accountId, scope);
+
+      res.json({ authorities });
     }
   );
 
@@ -121,18 +122,22 @@ export function handleRoutes(app: Express) {
     extractAuthorities(true),
     requireAuthority(AUTHORITIES["view_account_cache"]),
     async (req, res) => {
-      const { accountId } = req.query;
-
-      if (!accountId) {
-        return res.status(400).json({ message: "Account ID is required" });
-      }
-
       const authoritiesAccountsIds = getAllAuthoritiesCacheKeys();
+
       return res.json({
         authoritiesAccountsIds,
       });
     }
   );
+
+  app.get("/api/token/authorities/cache/:accountId", async (req, res) => {
+    const { accountId } = req.params;
+
+    const authorities = getAllAuthoritiesCacheForAccount(accountId);
+    return res.json({
+      authorities,
+    });
+  });
 
   app.delete(
     "/api/token/authorities/cache/:accountId",
