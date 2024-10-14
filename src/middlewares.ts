@@ -2,7 +2,9 @@
 import { Request, Response, NextFunction } from "express";
 import config from "./config";
 import { verifyToken } from "./utils/jwtUtils";
-import { getAuthoritiesCacheForAccount } from "./utils/authoritiesCache";
+import { queryAccountAuthoritiesById } from "./helpers/dbQueries";
+import { getAccountAuthorities } from "./authorities";
+import { JwtPayload } from "jsonwebtoken";
 
 // Timeout middleware
 export const timeoutMiddleware = (
@@ -27,7 +29,8 @@ export const errorHandlingMiddleware = (
   res.status(500).json({ error: "Something went wrong!" });
 };
 
-export const requireJwt = async (
+// Extract JWT from Authorization header
+export const extractJwt = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -37,7 +40,7 @@ export const requireJwt = async (
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ message: "Token missing" });
+      return next();
     }
 
     // Verify and decode JWT
@@ -47,10 +50,54 @@ export const requireJwt = async (
     }
 
     // Attach decoded token to the request object
+    res.locals.jwt = token;
     res.locals.decodedJwt = decoded;
+    res.locals.isAuthenticated = true;
+    res.locals.accountId = decoded.sub;
     next();
   } catch (error) {
     console.error("Error in JWT verification:", error);
     return res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+// Middleware to require JWT
+export const requireJwt = (req: Request, res: Response, next: NextFunction) => {
+  if (!res.locals.decodedJwt) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
+};
+
+export const extractAuthorities =
+  (forceDbQuery: boolean = false) =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const token = res.locals.jwt;
+      if (!token) {
+        res.locals.authorities = [];
+        return next();
+      }
+      const accountId: string = res.locals.decodedJwt.sub as string;
+      res.locals.authorities = await getAccountAuthorities(
+        accountId,
+        "cas",
+        forceDbQuery
+      );
+
+      next();
+    } catch (error) {
+      console.error("Error in authorities extraction:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  };
+
+export function requireAuthority(authority: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const authorities = res.locals.authorities;
+    if (!authorities.includes(authority)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  };
+}

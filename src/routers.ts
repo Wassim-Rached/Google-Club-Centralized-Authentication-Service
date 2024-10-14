@@ -1,17 +1,18 @@
 import { generateToken, verifyToken } from "./utils/jwtUtils";
-import {
-  getAccountInfoByEmail,
-  getAccountAuthoritiesById,
-} from "./helpers/dbQueries";
+import { queryAccountInfoByEmail } from "./helpers/dbQueries";
 import bcrypt from "bcrypt";
 import { Express, Request, Response } from "express";
 import {
-  clearAllAuthoritiesCache,
+  clearAllAccountsAuthoritiesCache,
   clearAuthoritiesCacheForAccount,
-  getAuthoritiesCacheForAccount,
-  appendAuthoritiesCacheForAccount,
+  getAllAuthoritiesCacheKeys,
 } from "./utils/authoritiesCache";
-import { requireJwt } from "./middlewares";
+import {
+  extractAuthorities,
+  extractJwt,
+  requireAuthority,
+  requireJwt,
+} from "./middlewares";
 import { HealthCheckResponse } from "./types";
 import configuration from "./config";
 import { AUTHORITIES } from "./authorities";
@@ -72,7 +73,7 @@ export function handleRoutes(app: Express) {
         .json({ message: "Email and password are required" });
     }
 
-    const userInfo = await getAccountInfoByEmail(email);
+    const userInfo = await queryAccountInfoByEmail(email);
 
     if (!userInfo) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -103,52 +104,43 @@ export function handleRoutes(app: Express) {
     }
   });
 
-  app.get("/api/token/authorities", async (req: Request, res: Response) => {
-    try {
-      const token = req.headers.authorization?.split(" ")[1];
-
-      if (!token) {
-        return res.status(401).json({ message: "Token missing" });
-      }
-
-      // Verify and decode JWT
-      const decoded = verifyToken(token);
-      const accountId: string = decoded.sub as string;
-
-      // Fetch user authorities
-      // get from request params
-      const scope = req.query.scope as string;
-
-      let authorities = getAuthoritiesCacheForAccount(accountId, scope);
-      if (!authorities) {
-        authorities = await getAccountAuthoritiesById(accountId, scope);
-        appendAuthoritiesCacheForAccount(accountId, authorities);
-      }
-
-      res.json({ authorities });
-    } catch (error) {
-      console.error("Error processing JWT:", error);
-      res.status(403).json({ message: "Invalid or expired token" });
-    }
-  });
-
-  app.post(
-    "/api/token/authorities/clear-cache",
+  app.get(
+    "/api/token/authorities",
+    extractJwt,
     requireJwt,
+    extractAuthorities(false),
     async (req: Request, res: Response) => {
-      const currentAccountId = res.locals.decodedJwt.sub;
+      res.json({ authorities: res.locals.authorities });
+    }
+  );
 
-      const currentAccountAuthorities = await getAccountAuthoritiesById(
-        currentAccountId,
-        "cas"
-      );
-      if (
-        !currentAccountAuthorities.includes(AUTHORITIES["clear_account_cache"])
-      ) {
-        res.status(403).json({ message: "Insuffisent Permissions" });
-        return;
+  app.get(
+    "/api/token/authorities/cache",
+    extractJwt,
+    requireJwt,
+    extractAuthorities(true),
+    requireAuthority(AUTHORITIES["view_account_cache"]),
+    async (req, res) => {
+      const { accountId } = req.query;
+
+      if (!accountId) {
+        return res.status(400).json({ message: "Account ID is required" });
       }
 
+      const authoritiesAccountsIds = getAllAuthoritiesCacheKeys();
+      return res.json({
+        authoritiesAccountsIds,
+      });
+    }
+  );
+
+  app.delete(
+    "/api/token/authorities/cache/:accountId",
+    extractJwt,
+    requireJwt,
+    extractAuthorities(true),
+    requireAuthority(AUTHORITIES["clear_account_cache"]),
+    async (req: Request, res: Response) => {
       const { accountId } = req.params;
       clearAuthoritiesCacheForAccount(accountId);
 
@@ -157,25 +149,13 @@ export function handleRoutes(app: Express) {
   );
 
   app.post(
-    "/api/token/authorities/clear-cache/all",
+    "/api/token/authorities/cache/clear-all",
+    extractJwt,
     requireJwt,
+    extractAuthorities(true),
+    requireAuthority(AUTHORITIES["clear_all_accounts_cache"]),
     async (req: Request, res: Response) => {
-      const currentAccountId = res.locals.decodedJwt.sub;
-
-      const currentAccountAuthorities = await getAccountAuthoritiesById(
-        currentAccountId,
-        "cas"
-      );
-      if (
-        !currentAccountAuthorities.includes(
-          AUTHORITIES["clear_all_accounts_cache"]
-        )
-      ) {
-        res.status(403).json({ message: "Insuffisent Permissions" });
-        return;
-      }
-
-      clearAllAuthoritiesCache();
+      clearAllAccountsAuthoritiesCache();
 
       res.json({ message: "All Accounts Authorities Cache cleared" });
     }
