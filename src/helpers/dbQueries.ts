@@ -11,7 +11,7 @@ export async function queryAccountInfoByEmail(
 ): Promise<Account | null> {
   try {
     const result = await query(
-      "SELECT id,password FROM accounts WHERE email = $1",
+      "SELECT id,password,is_email_verified FROM accounts WHERE email = $1",
       [email]
     );
 
