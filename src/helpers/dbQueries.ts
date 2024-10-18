@@ -1,13 +1,14 @@
 import { query } from "../utils/db";
 
-type accountInfo = {
+type Account = {
   id: number;
   password: string;
+  is_email_verified: boolean;
 };
 
 export async function queryAccountInfoByEmail(
   email: string
-): Promise<accountInfo | null> {
+): Promise<Account | null> {
   try {
     const result = await query(
       "SELECT id,password FROM accounts WHERE email = $1",

@@ -85,6 +85,10 @@ export function handleRoutes(app: Express) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if (!userInfo.is_email_verified) {
+      return res.status(403).json({ message: "Email is not verified" });
+    }
+
     const token = generateToken({ email: email, sub: userInfo.id });
 
     res.json({ token });
