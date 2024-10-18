@@ -6,7 +6,7 @@ dotenv.config();
 export default {
   security: {
     requireEmailVerification:
-      process.env.REQUIRE_EMAIL_VERIFICATION === "true" || true,
+      (process.env.REQUIRE_EMAIL_VERIFICATION || "true") === "true",
   },
   db: {
     user: process.env.DB_USER || "postgres",
