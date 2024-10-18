@@ -17,6 +17,7 @@ import {
 import { HealthCheckResponse } from "./types";
 import configuration from "./config";
 import { AUTHORITIES, getAccountAuthorities } from "./authorities";
+import config from "./config";
 
 export function handleRoutes(app: Express) {
   app.get("/", (req: Request, res: Response) => {
@@ -85,7 +86,10 @@ export function handleRoutes(app: Express) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (!userInfo.is_email_verified) {
+    if (
+      config.security.requireEmailVerification &&
+      !userInfo.is_email_verified
+    ) {
       return res.status(403).json({ message: "Email is not verified" });
     }
 
