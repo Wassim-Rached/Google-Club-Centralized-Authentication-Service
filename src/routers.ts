@@ -86,6 +86,10 @@ export function handleRoutes(app: Express) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if (userInfo.is_locked) {
+      return res.status(403).json({ message: "Account is locked" });
+    }
+
     if (
       config.security.requireEmailVerification &&
       !userInfo.is_email_verified

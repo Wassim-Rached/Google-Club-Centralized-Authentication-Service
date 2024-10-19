@@ -4,6 +4,7 @@ type Account = {
   id: number;
   password: string;
   is_email_verified: boolean;
+  is_locked: boolean;
 };
 
 export async function queryAccountInfoByEmail(
@@ -11,7 +12,7 @@ export async function queryAccountInfoByEmail(
 ): Promise<Account | null> {
   try {
     const result = await query(
-      "SELECT id,password,is_email_verified FROM accounts WHERE email = $1",
+      "SELECT id,password,is_email_verified,is_locked FROM accounts WHERE email = $1",
       [email]
     );
 
