@@ -33,54 +33,58 @@ export async function queryAccountAuthoritiesById(
 ): Promise<Array<string>> {
   try {
     const result = await query(
-      // SELECT
-      //     r.scope || '.role.' || r.name AS authority
-      // FROM
-      //     accounts ua
-      // JOIN
-      //     account_roles ur ON ua.id = ur.account_id
-      // JOIN
-      //     roles r ON ur.role_id = r.id
-      // WHERE
-      //     ua.id = $1
-      //     AND (r.scope = $2 )
+      `-- Select roles for the specified user and scope
+  SELECT
+    r.scope || '.role.' || r.name AS authority
+  FROM
+    accounts ua
+  JOIN
+    account_roles ur ON ua.id = ur.account_id
+  JOIN
+    roles r ON ur.role_id = r.id
+  WHERE
+    ua.id = $1
+    AND r.scope = $2
 
-      // UNION
-      `
-      SELECT 
-          p.scope || '.perm.' || p.name AS authority
-      FROM 
-          accounts ua
-      JOIN 
-          account_roles ur ON ua.id = ur.account_id
-      JOIN 
-          roles r ON ur.role_id = r.id
-      JOIN 
-          role_permissions rp ON r.id = rp.role_id
-      JOIN 
-          permissions p ON rp.permission_id = p.id
-      WHERE 
-          ua.id = $1
-          AND (p.scope = $2)
+  UNION
 
-      UNION
+  -- Select permissions associated with roles for the specified user and scope
+  SELECT
+    p.scope || '.perm.' || p.name AS authority
+  FROM
+    accounts ua
+  JOIN
+    account_roles ur ON ua.id = ur.account_id
+  JOIN
+    roles r ON ur.role_id = r.id
+  JOIN
+    role_permissions rp ON r.id = rp.role_id
+  JOIN
+    permissions p ON rp.permission_id = p.id
+  WHERE
+    ua.id = $1
+    AND p.scope = $2
 
-      SELECT 
-          p.scope || '.perm.' || p.name AS authority
-      FROM 
-          accounts ua
-      JOIN 
-          account_permissions up ON ua.id = up.account_id
-      JOIN 
-          permissions p ON up.permission_id = p.id
-      WHERE 
-          ua.id = $1
-          AND (p.scope = $2);
-      `,
+  UNION
+
+  -- Select permissions directly assigned to the specified user and scope
+  SELECT
+    p.scope || '.perm.' || p.name AS authority
+  FROM
+    accounts ua
+  JOIN
+    account_permissions up ON ua.id = up.account_id
+  JOIN
+    permissions p ON up.permission_id = p.id
+  WHERE
+    ua.id = $1
+    AND p.scope = $2;
+  `,
       [accountId, scope]
     );
 
-    return result.rows.map((row) => row.authority);
+    const res = result.rows.map((row) => row.authority);
+    return res;
   } catch (error) {
     console.error("Error fetching account authorities:", error);
     return [];
