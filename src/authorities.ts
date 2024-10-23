@@ -13,50 +13,41 @@ export const AUTHORITIES = {
 // handles getting account authorities from the cache or the database
 // and also appends global authorities to the account authorities
 // usually will be used when wanting to get the account authorities
-export async function getAccountAuthorities(
+export async function getAccountAuthoritiesForScope(
   accountId: string,
   scope: string,
   forceDbQuery = false
 ): Promise<string[]> {
   let authorities: string[] = [];
 
-  // handle scope authorities
-  let currentScopeAuthorities: string[] = [];
-
   if (!forceDbQuery) {
-    currentScopeAuthorities =
-      getAccountAuthoritiesCacheForScope(accountId, scope) || [];
+    authorities = getAccountAuthoritiesCacheForScope(accountId, scope) || [];
   }
 
-  if (forceDbQuery || currentScopeAuthorities.length === 0) {
+  if (forceDbQuery || authorities.length === 0) {
     // query from db
-    currentScopeAuthorities =
-      (await queryAccountAuthoritiesById(accountId, scope)) || [];
-    setAccountAuthoritiesCacheForScope(
+    authorities = (await queryAccountAuthoritiesById(accountId, scope)) || [];
+    setAccountAuthoritiesCacheForScope(accountId, scope, authorities);
+  }
+
+  return authorities;
+}
+
+export async function getAccountAuthorities(
+  accountId: string,
+  scopes: string[],
+  forceDbQuery = false
+): Promise<string[]> {
+  let authorities: string[] = [];
+
+  for (const scope of scopes) {
+    const currentScopeAuthorities = await getAccountAuthoritiesForScope(
       accountId,
       scope,
-      currentScopeAuthorities
+      forceDbQuery
     );
+    authorities = [...authorities, ...currentScopeAuthorities];
   }
-
-  authorities = currentScopeAuthorities;
-
-  // handle global authorities
-  let globalAuthorities: string[] = [];
-
-  if (!forceDbQuery) {
-    globalAuthorities =
-      getAccountAuthoritiesCacheForScope(accountId, "global") || [];
-  }
-
-  if (forceDbQuery || globalAuthorities.length === 0) {
-    globalAuthorities =
-      (await queryAccountAuthoritiesById(accountId, "global")) || [];
-    setAccountAuthoritiesCacheForScope(accountId, "global", globalAuthorities);
-  }
-
-  // final result
-  authorities = [...authorities, ...globalAuthorities];
 
   return authorities;
 }

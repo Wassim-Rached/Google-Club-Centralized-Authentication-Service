@@ -16,7 +16,11 @@ import {
 } from "./middlewares";
 import { HealthCheckResponse } from "./types";
 import configuration from "./config";
-import { AUTHORITIES, getAccountAuthorities } from "./authorities";
+import {
+  AUTHORITIES,
+  getAccountAuthorities,
+  getAccountAuthoritiesForScope,
+} from "./authorities";
 import config from "./config";
 
 export function handleRoutes(app: Express) {
@@ -119,10 +123,21 @@ export function handleRoutes(app: Express) {
     async (req: Request, res: Response) => {
       const { accountId } = res.locals;
 
-      const scope = req.query.scope as string;
+      let scope = req.query.scope as string | string[] | undefined;
 
-      const authorities = await getAccountAuthorities(accountId, scope);
+      if (!scope) {
+        scope = "global";
+      }
 
+      let authorities: string[];
+
+      // it accually the same but one uses a loop and the other doesn't
+      // but why not make simple things complex
+      if (Array.isArray(scope)) {
+        authorities = await getAccountAuthorities(accountId, scope);
+      } else {
+        authorities = await getAccountAuthoritiesForScope(accountId, scope);
+      }
       res.json({ authorities });
     }
   );

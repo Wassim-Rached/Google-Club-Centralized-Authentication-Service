@@ -3,7 +3,10 @@ import { Request, Response, NextFunction } from "express";
 import config from "./config";
 import { verifyToken } from "./utils/jwtUtils";
 import { queryAccountAuthoritiesById } from "./helpers/dbQueries";
-import { getAccountAuthorities } from "./authorities";
+import {
+  getAccountAuthorities,
+  getAccountAuthoritiesForScope,
+} from "./authorities";
 import { JwtPayload } from "jsonwebtoken";
 
 // Timeout middleware
@@ -79,7 +82,7 @@ export const extractAuthorities =
         return next();
       }
       const accountId: string = res.locals.decodedJwt.sub as string;
-      res.locals.authorities = await getAccountAuthorities(
+      res.locals.authorities = await getAccountAuthoritiesForScope(
         accountId,
         "cas",
         forceDbQuery
