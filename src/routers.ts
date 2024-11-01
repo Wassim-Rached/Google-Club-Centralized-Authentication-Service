@@ -70,6 +70,11 @@ export function handleRoutes(app: Express) {
     return res.status(statusCode).json(result);
   });
 
+  app.get("/api/authorities", (req: Request, res: Response) => {
+    const authorities: string[] = Object.values(AUTHORITIES);
+    res.json(authorities);
+  });
+
   // Login route
   app.post("/api/token", async (req: Request, res: Response) => {
     const { email, password } = req.body;
@@ -142,6 +147,7 @@ export function handleRoutes(app: Express) {
     }
   );
 
+  // cache routes
   app.get(
     "/api/token/authorities/cache",
     extractJwt,
@@ -180,7 +186,7 @@ export function handleRoutes(app: Express) {
     }
   );
 
-  app.post(
+  app.delete(
     "/api/token/authorities/cache/clear-all",
     extractJwt,
     requireJwt,
