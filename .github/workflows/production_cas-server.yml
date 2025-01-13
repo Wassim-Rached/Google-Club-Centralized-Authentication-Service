@@ -5,8 +5,6 @@ name: Build and deploy Node.js app to Azure Web App - cas-server
 
 on:
   push:
-    branches:
-      - production
   workflow_dispatch:
 
 jobs:
